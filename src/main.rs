@@ -8,7 +8,7 @@ const FRAME_SHORT_DELAY: Duration = Duration::from_micros(300); /* 300µs delay 
 const FRAME_LONG_DELAY: Duration = Duration::from_micros(600); /* 600µs delay for long pulse.           */
 const BTW_REEMIT_DELAY_MS: Duration = Duration::from_millis(12); /* 12ms delay before sending same signal.*/
 const CODE: [bool; 10] = [
-    false, true, false, true, false, true, false, true, false, true,
+    true, false, true, false, true, false, true, false, true, false,
 ];
 
 fn send_zero(pin: &mut OutputPin) {
