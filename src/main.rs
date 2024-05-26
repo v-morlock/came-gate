@@ -2,7 +2,7 @@
 
 use std::{thread::sleep, time::Duration};
 
-use sysfs_gpio::{Direction, Pin};
+use rppal::gpio::{Gpio, OutputPin};
 
 const FRAME_SHORT_DELAY: Duration = Duration::from_micros(300); /* 300µs delay for short pulse.          */
 const FRAME_LONG_DELAY: Duration = Duration::from_micros(600); /* 600µs delay for long pulse.           */
@@ -11,41 +11,41 @@ const CODE: [bool; 10] = [
     false, true, false, true, false, true, false, true, false, true,
 ];
 
-fn send_zero(pin: Pin) -> Result<(), sysfs_gpio::Error> {
-    pin.set_value(0)?;
+fn send_zero(pin: &mut OutputPin) {
+    pin.set_low();
     sleep(FRAME_SHORT_DELAY);
-    pin.set_value(1)?;
+    pin.set_high();
     sleep(FRAME_SHORT_DELAY);
-    pin.set_value(0)?;
+    pin.set_low();
     sleep(FRAME_SHORT_DELAY);
     Ok(())
 }
 
-fn send_one(pin: Pin) -> Result<(), sysfs_gpio::Error> {
-    pin.set_value(1)?;
+fn send_one(pin: &mut OutputPin) {
+    pin.set_high();
     sleep(FRAME_LONG_DELAY);
-    pin.set_value(0)?;
+    pin.set_low();
     sleep(FRAME_SHORT_DELAY);
     Ok(())
 }
 
-fn send_frame(pin: Pin, nb_emit: u32) -> Result<(), sysfs_gpio::Error> {
+fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
     for _ in 0..nb_emit {
         /* Send header */
-        send_zero(pin)?;
+        send_zero(pin);
 
         /* Send code */
         for bit in CODE {
             if bit {
-                send_one(pin)?;
+                send_one(pin);
             } else {
-                send_zero(pin)?;
+                send_zero(pin);
             }
         }
 
         /* Send trailer */
-        send_zero(pin)?;
-        send_one(pin)?;
+        send_zero(pin);
+        send_one(pin);
 
         sleep(BTW_REEMIT_DELAY_MS);
     }
@@ -53,12 +53,12 @@ fn send_frame(pin: Pin, nb_emit: u32) -> Result<(), sysfs_gpio::Error> {
     Ok(())
 }
 
-//#define  SCAN_MODE                /* Uncomment to enter scan mode.         */
 fn main() {
-    let pin = Pin::new(23);
+    let mut pin = Gpio::new().unwrap().get(23).unwrap().into_output();
+
     pin.with_exported(|| {
         pin.set_direction(Direction::Out).unwrap();
-        send_frame(pin, 10)
+        send_frame(&mut pin, 10)
     })
     .unwrap();
 }
