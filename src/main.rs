@@ -55,10 +55,5 @@ fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
 
 fn main() {
     let mut pin = Gpio::new().unwrap().get(23).unwrap().into_output();
-
-    pin.with_exported(|| {
-        pin.set_direction(Direction::Out).unwrap();
-        send_frame(&mut pin, 10)
-    })
-    .unwrap();
+    send_frame(&mut pin, 10);
 }
