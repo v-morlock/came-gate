@@ -1,3 +1,5 @@
+// adapted from https://github.com/jyvet/gate-remote
+
 use std::{thread::sleep, time::Duration};
 
 use sysfs_gpio::{Direction, Pin};
