@@ -18,7 +18,6 @@ fn send_zero(pin: &mut OutputPin) {
     sleep(FRAME_SHORT_DELAY);
     pin.set_low();
     sleep(FRAME_SHORT_DELAY);
-    Ok(())
 }
 
 fn send_one(pin: &mut OutputPin) {
@@ -26,7 +25,6 @@ fn send_one(pin: &mut OutputPin) {
     sleep(FRAME_LONG_DELAY);
     pin.set_low();
     sleep(FRAME_SHORT_DELAY);
-    Ok(())
 }
 
 fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
@@ -49,8 +47,6 @@ fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
 
         sleep(BTW_REEMIT_DELAY_MS);
     }
-
-    Ok(())
 }
 
 fn main() {
