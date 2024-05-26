@@ -46,6 +46,8 @@ fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
         send_one(pin);
 
         sleep(BTW_REEMIT_DELAY_MS);
+
+        println!("Sent")
     }
 }
 
