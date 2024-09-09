@@ -1,55 +1,117 @@
-// adapted from https://github.com/jyvet/gate-remote
+use std::{cell::RefCell, rc::Rc};
 
-use std::{thread::sleep, time::Duration};
+use hap::{
+    accessory::{garage_door_opener, lock, Category, Information},
+    characteristic::{Characteristic, Readable, Updatable},
+    transport::{IpTransport, Transport},
+    Config, HapType,
+};
 
-use rppal::gpio::{Gpio, OutputPin};
-
-const SHORT: Duration = Duration::from_micros(370);
-const LONG: Duration = Duration::from_micros(620);
-const BTW_REEMIT_DELAY_MS: Duration = Duration::from_micros(11_380);
-const CODE: [bool; 10] = [
-    false, true, false, true, false, true, false, true, false, true,
-];
-
-fn send_zero(pin: &mut OutputPin) {
-    pin.set_low();
-    sleep(LONG);
-    pin.set_high();
-    sleep(SHORT);
-    pin.set_low();
+pub struct VirtualDoorInner {
+    current_position: u8,
+    target_position: u8,
 }
 
-fn send_one(pin: &mut OutputPin) {
-    pin.set_low();
-    sleep(SHORT);
-    pin.set_high();
-    sleep(LONG);
-    pin.set_low();
+#[derive(Clone)]
+pub struct VirtualDoor {
+    inner: Arc<Mutex<VirtualDoorInner>>,
+    current_position: Characteristic<u8>,
 }
 
-fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
-    for _ in 0..nb_emit {
-        /* Send header */
-        send_zero(pin);
-        send_zero(pin);
-        send_zero(pin);
-
-        /* Send code */
-        for bit in CODE {
-            if bit {
-                send_one(pin);
-            } else {
-                send_zero(pin);
-            }
+impl VirtualDoor {
+    pub fn new(inner: VirtualDoorInner, current_position: Characteristic<u8>) -> VirtualDoor {
+        VirtualDoor {
+            inner: Arc::new(Mutex::new(inner)),
+            current_position,
         }
+    }
+}
 
-        sleep(BTW_REEMIT_DELAY_MS);
+impl Readable<u8> for VirtualDoor {
+    fn on_read(&mut self, hap_type: HapType) -> Option<u8> {
+        match hap_type {
+            HapType::CurrentPosition => {
+                println!("Current position read.");
+                Some(self.inner.borrow().current_position)
+            }
+            HapType::TargetPosition => {
+                println!("Target position read.");
+                Some(self.inner.borrow().target_position)
+            }
+            _ => None,
+        }
+    }
+}
 
-        println!("Sent")
+impl Updatable<u8> for VirtualDoor {
+    fn on_update(&mut self, old_val: &u8, new_val: &u8, hap_type: HapType) {
+        match hap_type {
+            HapType::CurrentPosition => {
+                println!("Current position updated from {} to {}.", old_val, new_val);
+                if new_val != old_val {
+                    self.inner.borrow_mut().current_position = *new_val;
+                }
+            }
+            HapType::TargetPosition => {
+                println!("Target position updated from {} to {}.", old_val, new_val);
+                if new_val != old_val {
+                    {
+                        let mut inner = self.inner.borrow_mut();
+                        inner.target_position = *new_val;
+                        inner.current_position = *new_val;
+                    }
+                    self.current_position.set_value(*new_val).unwrap();
+                }
+            }
+            _ => {}
+        }
     }
 }
 
 fn main() {
-    let mut pin = Gpio::new().unwrap().get(23).unwrap().into_output();
-    send_frame(&mut pin, 10);
+    let mut door = door::new(Information {
+        name: "Door".into(),
+        ..Default::default()
+    })
+    .unwrap();
+    let virtual_door = VirtualDoor::new(
+        VirtualDoorInner {
+            current_position: 0,
+            target_position: 0,
+        },
+        door.inner.door.inner.current_position.clone(),
+    );
+    door.inner
+        .door
+        .inner
+        .current_position
+        .set_readable(virtual_door.clone())
+        .unwrap();
+    door.inner
+        .door
+        .inner
+        .current_position
+        .set_updatable(virtual_door.clone())
+        .unwrap();
+    door.inner
+        .door
+        .inner
+        .target_position
+        .set_readable(virtual_door.clone())
+        .unwrap();
+    door.inner
+        .door
+        .inner
+        .target_position
+        .set_updatable(virtual_door)
+        .unwrap();
+
+    let config = Config {
+        name: "Door".into(),
+        category: Category::Door,
+        ..Default::default()
+    };
+    let mut ip_transport = IpTransport::new(config).unwrap();
+    ip_transport.add_accessory(door).unwrap();
+    ip_transport.start().unwrap();
 }
