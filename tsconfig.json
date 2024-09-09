@@ -1,0 +1,4 @@
+{
+  "extends": ["@tsconfig/node21"],
+  "include": ["src/**.ts"]
+}
