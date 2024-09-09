@@ -4,30 +4,32 @@ use std::{thread::sleep, time::Duration};
 
 use rppal::gpio::{Gpio, OutputPin};
 
-const SHORT: Duration = Duration::from_micros(320); /* 300µs delay for short pulse.          */
-const LONG: Duration = 2 * SHORT;
-const BTW_REEMIT_DELAY_MS: Duration = 36 * SHORT;
+const SHORT: Duration = Duration::from_micros(370);
+const LONG: Duration = Duration::from_micros(620);
+const BTW_REEMIT_DELAY_MS: Duration = Duration::from_micros(11_380);
 const CODE: [bool; 10] = [
     false, true, false, true, false, true, false, true, false, true,
 ];
 
 fn send_zero(pin: &mut OutputPin) {
     pin.set_low();
-    sleep(SHORT);
-    pin.set_high();
     sleep(LONG);
+    pin.set_high();
+    sleep(SHORT);
 }
 
 fn send_one(pin: &mut OutputPin) {
     pin.set_low();
-    sleep(LONG);
-    pin.set_high();
     sleep(SHORT);
+    pin.set_high();
+    sleep(LONG);
 }
 
 fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
     for _ in 0..nb_emit {
         /* Send header */
+        send_zero(pin);
+        send_zero(pin);
         send_zero(pin);
 
         /* Send code */
@@ -38,10 +40,6 @@ fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
                 send_zero(pin);
             }
         }
-
-        /* Send trailer */
-        send_zero(pin);
-        send_one(pin);
 
         sleep(BTW_REEMIT_DELAY_MS);
 
