@@ -12,17 +12,15 @@ import { trigger } from "./remote";
 // HAPStorage.setCustomStoragePath("...");
 
 const accessoryUuid = uuid.generate("io.morlock.garage");
-const accessory = new Accessory("Example Accessory Name", accessoryUuid);
+const accessory = new Accessory("Hoftor", accessoryUuid);
 
-const lightService = new Service.GarageDoorOpener("Example Lightbulb");
+const gateService = new Service.GarageDoorOpener("Hoftor");
 
 let state = false;
 
 // 'On' characteristic is required for the light service
-const current = lightService.getCharacteristic(
-  Characteristic.CurrentDoorState
-)!;
-const target = lightService.getCharacteristic(Characteristic.TargetDoorState)!;
+const current = gateService.getCharacteristic(Characteristic.CurrentDoorState)!;
+const target = gateService.getCharacteristic(Characteristic.TargetDoorState)!;
 
 function setState(val: boolean) {
   if (val === state) return;
@@ -53,14 +51,14 @@ target.on(CharacteristicEventTypes.SET, (n, callback) => {
   callback();
 });
 
-accessory.addService(lightService); // adding the service to the accessory
+accessory.addService(gateService); // adding the service to the accessory
 
 // once everything is set up, we publish the accessory. Publish should always be the last step!
 accessory.publish({
-  username: "17:51:07:F4:BC:8A",
-  pincode: "678-90-876",
+  username: "AB:12:99:F4:12:AA",
+  pincode: "943-24-157",
   port: 47128,
-  category: Categories.LIGHTBULB, // value here defines the symbol shown in the pairing screen
+  category: Categories.GARAGE_DOOR_OPENER, // value here defines the symbol shown in the pairing screen
 });
 
 console.log("Accessory setup finished!");
