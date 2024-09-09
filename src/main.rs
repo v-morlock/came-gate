@@ -16,6 +16,7 @@ fn send_zero(pin: &mut OutputPin) {
     sleep(LONG);
     pin.set_high();
     sleep(SHORT);
+    pin.set_low();
 }
 
 fn send_one(pin: &mut OutputPin) {
@@ -23,6 +24,7 @@ fn send_one(pin: &mut OutputPin) {
     sleep(SHORT);
     pin.set_high();
     sleep(LONG);
+    pin.set_low();
 }
 
 fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
