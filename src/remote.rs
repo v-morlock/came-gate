@@ -51,5 +51,5 @@ fn send_frame(pin: &mut OutputPin, nb_emit: u32) {
 
 pub fn trigger() {
     let mut pin = Gpio::new().unwrap().get(23).unwrap().into_output();
-    remote::send_frame(&mut pin, 10);
+    send_frame(&mut pin, 50);
 }
